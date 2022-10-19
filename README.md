@@ -3,15 +3,13 @@ A toolkit for the analysis of synergies in motor control and motor neuroscience
 
 Broadly speaking, the word synergy is used to define the existence of significant covariation between elements of the motor ensemble, although the exact definition varies between authors. Synerpy, while still nascent, aims to offer a single resource for the use of the myriad analytical techniques used within the analysis of synergies.
 
-At the moment, synerpy only hosts a few utilities for the analysis of motor unit and force data.
-
-## `synerpy.utils` example: motor unit modes
+## `synerpy.utils` example: motor unit modes, analysis of synergy
 (Madarshahian et al. 2021)
 
 Below is an example of using `synerpy.utils` to construct motor unit modes.
 ```python
-from synerpy.utils import mu_utils as mu
-from synerpy.utils import force_utils as fr
+from synerpy.utils import spikes
+from synerpy.utils import force
 
 # file directories (may need to change on your local device)
 fr_fl = "/example_data/force_ex.txt"
@@ -47,7 +45,7 @@ acc_times = [x.time_range for x in force_acc]
 
 ### motor unit processing
 # reading in initial file
-mu_tr = mu.read(rates_fl)
+mu_tr = spikes.read(rates_fl)
 
 # segmenting and downsampling according to accepted force cycles
 mu_seg = [x.split(t[0], t[1]).downsample(10) for t in acc_times]
