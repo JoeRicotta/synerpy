@@ -4,7 +4,6 @@
 # 2. transform it, or
 # 3. fit and/or transform
 
-from pprint import pprint as pprint
 import numpy as np
 from scipy import linalg
 import warnings
@@ -311,7 +310,7 @@ class UCMAnalytical(_UCMmodel):
 #j = np.array([[3,2,4]])
 #ucm = UCMAnalytical(j)
 #ucm.fit_transform(X)
-#pprint(ucm.__dict__)
+# pprint(ucm.__dict__)
 
 
 
@@ -486,11 +485,8 @@ class Modes(_Model):
         self.fit(X).transform(X)
 
         return self
-        
 
 
-
-mm = Modes(rotation = "varimax")
-fin = UCMRegress().fit_transform(mm.fit_transform(X).magnitudes, y)
-pprint(fin.__dict__)
-
+# mm = Modes(rotation = "varimax")
+# fin = UCMRegress().fit_transform(mm.fit_transform(X).magnitudes, y)
+# pprint(fin.__dict__)

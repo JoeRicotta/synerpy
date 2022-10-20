@@ -582,28 +582,27 @@ class Force(_Trial):
                    "min": mins,
                    "minmax": minmax,
                    "cycle" : cycle}
-        
+      
         # getting the proper indices from the list
         cuts = methods.get(method)
-        
+      
         # grabbing from list
         out, time = [[]], [[]]
         j = 0
-        for i,line in enumerate(zip(self.data, self.time)):
+        for i, line in enumerate(zip(self.data, self.time)):
             out[j].append(line[0].tolist())
             time[j].append(line[1].tolist())
             if i in cuts:
                 out.append([])
                 time.append([])
                 j += 1
-                
+               
         out = [np.array(x) for x in out]
         time = [np.array(x) for x in time]
 
         # yielding individual force objects
-        forces = []
         for el in zip(out, time):
-            yield Force(file = self.file, data = el[0], time = el[1], mvc_file = self.mvc_file, mvc = self.mvc, units = self.units)
+            yield Force(file=self.file, data=el[0], time=el[1], mvc_file=self.mvc_file, mvc=self.mvc, units=self.units)
 
 
 # example
@@ -613,8 +612,6 @@ class Force(_Trial):
 # spl = norm.segment(2,15)
 # out = list(spl.partition(hz = 1000))
 # fin = list(map(lambda x: x.downsample(10), out))
-
-
 
 
 ####################################################
@@ -853,13 +850,6 @@ class Spikes(_Trial):
 # ff.plot()
 # ff.append(ff).plot()
 
-mfile = "example_data/rates_ex.txt"
-mm = delsys_read(mfile)
-mm.segment(2,2.2).plot().downsample(20).plot()
-
-
-
-
-
-
-
+# mfile = "example_data/rates_ex.txt"
+# mm = delsys_read(mfile)
+# mm.segment(2,2.2).plot().downsample(20).plot()
