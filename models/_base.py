@@ -1,46 +1,71 @@
 """
-Base class for all models.
-In the framework for synerpy, all models are objects with fit methods.
-THis means they take in data and produce some model of that data
-given some assumptions about the connections of that data.
+base functionality for models.
 """
 
-from ..base import BaseEstimator, TransformerMixin
-from numpy import mean, std
+import numpy as np
+
+from sklearn.utils.validation import check_array
 
 
-class BaseModel(BaseEstimator):
+def varimax(X, _use_scaled_ = False, max_iter = 500, tol = 1e-6):
 
-    def __init__(self, _is_fitted_ = False, _use_scaled_ = False):
-        self._is_fitted_ = _is_fitted_
-        self._use_scaled_ = _use_scaled_
+    X = check_array(X)
 
-    # all models must, by definition, have a fit function, although they need not
-    # have a transform function as well.
-    def fit(self, X, y = None):
-        """
-        Checks data input and returns whether or not structure is fit.
-        """
-        if y is not None:
-            X, y = self.check_X_y(X,y)
-        else:
-            X = self.check_X(X)
+    n_rows, n_cols = X.shape
+    if n_cols < 2:
+        return X
 
-        # pass self fit function
-        return self._fit(X,y)
-        
-    @staticmethod
-    def _rm_mean(X):
-    """
-    returns dataframe centered at 0 mean.
-    """
-        mean_ = mean(X, axis = 0)
-        
-        return X - mean_
+    X = X.copy()
 
-    
-    def _standardize_data(self, X):
-        """
-        Transforms data to scale to 0 mean and unit variance.
-        """
-        return self._rm_mean(X) / np.std(X, axis = 0)
+    # normalize the loadings matrix
+    # using sqrt of the sum of squares (Kaiser)
+    if _use_scaled_:
+        normalized_mtx = np.apply_along_axis(
+            lambda x: np.sqrt(np.sum(x**2)), 1, X.copy()
+        )
+        X = (X.T / normalized_mtx).T
+
+
+    rotation_mtx = np.eye(n_cols)
+
+    # index and rotation matrix
+    d = 0
+    for _ in range(max_iter):
+
+        old_d = d
+
+        # take inner product of loading matrix
+        # and rotation matrix
+        basis = np.dot(X, rotation_mtx)
+
+        # transform data for singular value decomposition using updated formula :
+        # B <- t(x) %*% (z^3 - z %*% diag(drop(rep(1, p) %*% z^2))/p)
+        diagonal = np.diag(np.squeeze(np.repeat(1, n_rows).dot(basis**2)))
+        transformed = X.T.dot(basis**3 - basis.dot(diagonal) / n_rows)
+
+        # perform SVD on
+        # the transformed matrix
+        U, S, V = np.linalg.svd(transformed)
+
+        # take inner product of U and V, and sum of S
+        rotation_mtx = np.dot(U, V)
+        d = np.sum(S)
+
+        # check convergence
+        if d < old_d * (1 + tol):
+            break
+
+    # take inner product of loading matrix
+    # and rotation matrix
+    X = np.dot(X, rotation_mtx)
+
+    # de-normalize the data
+    if _use_scaled_:
+        X = X.T * normalized_mtx
+    else:
+        X = X.T
+
+    # convert loadings matrix to data frame
+    loadings = X.T.copy()
+
+    return loadings, rotation_mtx

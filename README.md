@@ -1,6 +1,8 @@
 # Synerpy
 A toolkit for the analysis of synergies in motor control and motor neuroscience
 
+Synerpy extends scikit-learn's powerful tools of machine learning for use in motor neuroscience. You will need sklearn v1.1.3 or greater to use synerpy.
+
 Broadly speaking, the word synergy is used to define the existence of significant covariation between elements of the motor ensemble, although the exact definition varies between authors. Synerpy, while still nascent, aims to offer a single resource for the use of the myriad analytical techniques used within the analysis of synergies.
 
 ## `synerpy.utils` example: motor unit modes, analysis of synergy

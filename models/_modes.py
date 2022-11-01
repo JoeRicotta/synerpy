@@ -1,174 +1,306 @@
-from ._base import BaseModel
-from ..base import TransformerMixin
+"""
+Modes class
+"""
+import numpy as np
 
-## TODO:
-## PUT FACTOR ANALYSIS AND PCA IN SEPARATE FILES
+from ._base import varimax
+
+from sklearn.decomposition import PCA
+from sklearn.utils.extmath import svd_flip
 
 
-class Modes(BaseModel, TransformerMixin):
+class Modes(PCA):
     """
-    Typically defined for MU data
-    Madarshahian et al 2021
+    Synerpy's wrapper around sklearn.decomposition.PCA to define motor unit
+    modes (Madarshahian et al 2021).
 
-    Please consider that the results of interest are likely sensitive to whether the data used for the results
-    is scaled or not scaled. Condsider Modes()._use_scaled_ = True for the analyses.
+    Linear dimensionality reduction using Singular Value Decomposition of the
+    data to project it to a lower dimensional space. The input data is centered
+    but not scaled for each feature before applying the SVD.
+
+    It uses the LAPACK implementation of the full SVD or a randomized truncated
+    SVD by the method of Halko et al. 2009, depending on the shape of the input
+    data and the number of components to extract.
+
+    It can also use the scipy.sparse.linalg ARPACK implementation of the
+    truncated SVD.
+
+    Notice that this class does not support sparse input. See
+    :class:`TruncatedSVD` for an alternative with sparse data.
+
+    Read more in the :ref:`User Guide <PCA>`.
+
+    Parameters
+    ----------
+    n_components : int, float or 'mle', default=None
+        Number of components (modes) to keep.
+        if n_components is not set all components are kept::
+
+            n_components == min(n_samples, n_features)
+
+        If ``n_components == 'mle'`` and ``svd_solver == 'full'``, Minka's
+        MLE is used to guess the dimension. Use of ``n_components == 'mle'``
+        will interpret ``svd_solver == 'auto'`` as ``svd_solver == 'full'``.
+
+        If ``0 < n_components < 1`` and ``svd_solver == 'full'``, select the
+        number of components such that the amount of variance that needs to be
+        explained is greater than the percentage specified by n_components.
+
+        If ``svd_solver == 'arpack'``, the number of components must be
+        strictly less than the minimum of n_features and n_samples.
+
+        Hence, the None case results in::
+
+            n_components == min(n_samples, n_features) - 1
+
+    copy : bool, default=True
+        If False, data passed to fit are overwritten and running
+        fit(X).transform(X) will not yield the expected results,
+        use fit_transform(X) instead.
+
+    whiten : bool, default=False
+        When True (False by default) the `components_` vectors are multiplied
+        by the square root of n_samples and then divided by the singular values
+        to ensure uncorrelated outputs with unit component-wise variances.
+
+        Whitening will remove some information from the transformed signal
+        (the relative variance scales of the components) but can sometime
+        improve the predictive accuracy of the downstream estimators by
+        making their data respect some hard-wired assumptions.
+
+    svd_solver : {'auto', 'full', 'arpack', 'randomized'}, default='auto'
+        If auto :
+            The solver is selected by a default policy based on `X.shape` and
+            `n_components`: if the input data is larger than 500x500 and the
+            number of components to extract is lower than 80% of the smallest
+            dimension of the data, then the more efficient 'randomized'
+            method is enabled. Otherwise the exact full SVD is computed and
+            optionally truncated afterwards.
+        If full :
+            run exact full SVD calling the standard LAPACK solver via
+            `scipy.linalg.svd` and select the components by postprocessing
+        If arpack :
+            run SVD truncated to n_components calling ARPACK solver via
+            `scipy.sparse.linalg.svds`. It requires strictly
+            0 < n_components < min(X.shape)
+        If randomized :
+            run randomized SVD by the method of Halko et al.
+
+        .. versionadded:: 0.18.0
+
+    tol : float, default=0.0
+        Tolerance for singular values computed by svd_solver == 'arpack'.
+        Must be of range [0.0, infinity).
+
+        .. versionadded:: 0.18.0
+
+    iterated_power : int or 'auto', default='auto'
+        Number of iterations for the power method computed by
+        svd_solver == 'randomized'.
+        Must be of range [0, infinity).
+
+        .. versionadded:: 0.18.0
+
+    n_oversamples : int, default=10
+        This parameter is only relevant when `svd_solver="randomized"`.
+        It corresponds to the additional number of random vectors to sample the
+        range of `X` so as to ensure proper conditioning. See
+        :func:`~sklearn.utils.extmath.randomized_svd` for more details.
+
+        .. versionadded:: 1.1
+
+    power_iteration_normalizer : {'auto', 'QR', 'LU', 'none'}, default='auto'
+        Power iteration normalizer for randomized SVD solver.
+        Not used by ARPACK. See :func:`~sklearn.utils.extmath.randomized_svd`
+        for more details.
+
+        .. versionadded:: 1.1
+
+    random_state : int, RandomState instance or None, default=None
+        Used when the 'arpack' or 'randomized' solvers are used. Pass an int
+        for reproducible results across multiple function calls.
+        See :term:`Glossary <random_state>`.
+
+        .. versionadded:: 0.18.0
+
+    Attributes
+    ----------
+    components_ : ndarray of shape (n_components, n_features)
+        Principal axes in feature space, representing the directions of
+        maximum variance in the data. Equivalently, the right singular
+        vectors of the centered input data, parallel to its eigenvectors.
+        The components are sorted by ``explained_variance_``.
+
+    explained_variance_ : ndarray of shape (n_components,)
+        The amount of variance explained by each of the selected components.
+        The variance estimation uses `n_samples - 1` degrees of freedom.
+
+        Equal to n_components largest eigenvalues
+        of the covariance matrix of X.
+
+        .. versionadded:: 0.18
+
+    explained_variance_ratio_ : ndarray of shape (n_components,)
+        Percentage of variance explained by each of the selected components.
+
+        If ``n_components`` is not set then all components are stored and the
+        sum of the ratios is equal to 1.0.
+
+    singular_values_ : ndarray of shape (n_components,)
+        The singular values corresponding to each of the selected components.
+        The singular values are equal to the 2-norms of the ``n_components``
+        variables in the lower-dimensional space.
+
+        .. versionadded:: 0.19
+
+    mean_ : ndarray of shape (n_features,)
+        Per-feature empirical mean, estimated from the training set.
+
+        Equal to `X.mean(axis=0)`.
+
+    n_components_ : int
+        The estimated number of components. When n_components is set
+        to 'mle' or a number between 0 and 1 (with svd_solver == 'full') this
+        number is estimated from input data. Otherwise it equals the parameter
+        n_components, or the lesser value of n_features and n_samples
+        if n_components is None.
+
+    n_features_ : int
+        Number of features in the training data.
+
+    n_samples_ : int
+        Number of samples in the training data.
+
+    noise_variance_ : float
+        The estimated noise covariance following the Probabilistic PCA model
+        from Tipping and Bishop 1999. See "Pattern Recognition and
+        Machine Learning" by C. Bishop, 12.2.1 p. 574 or
+        http://www.miketipping.com/papers/met-mppca.pdf. It is required to
+        compute the estimated data covariance and score samples.
+
+        Equal to the average of (min(n_features, n_samples) - n_components)
+        smallest eigenvalues of the covariance matrix of X.
+
+    n_features_in_ : int
+        Number of features seen during :term:`fit`.
+
+        .. versionadded:: 0.24
+
+    feature_names_in_ : ndarray of shape (`n_features_in_`,)
+        Names of features seen during :term:`fit`. Defined only when `X`
+        has feature names that are all strings.
+
+        .. versionadded:: 1.0
+
+    References
+    ----------
+    A desciption of motor unit modes can be be found at
+    `Madarshahian et al (2022). "Intra-muscle synergies stabilizing reflex-mediated
+    force changes". Neuroscience, <https://www.sciencedirect.com/science/article/abs/pii/S0306452222005176?casa_token=WLCMIt0xQdcAAAAA:62dF8lHoGFe-eR9sQoFJss9z-OTBANhm74WsLjd9lKtXhUQV0lUjRME-dc0Aa2nFyxnaE3hn>`_
+    
+    For n_components == 'mle', this class uses the method from:
+    `Minka, T. P.. "Automatic choice of dimensionality for PCA".
+    In NIPS, pp. 598-604 <https://tminka.github.io/papers/pca/minka-pca.pdf>`_
+
+    Implements the probabilistic PCA model from:
+    `Tipping, M. E., and Bishop, C. M. (1999). "Probabilistic principal
+    component analysis". Journal of the Royal Statistical Society:
+    Series B (Statistical Methodology), 61(3), 611-622.
+    <http://www.miketipping.com/papers/met-mppca.pdf>`_
+    via the score and score_samples methods.
+
+    For svd_solver == 'arpack', refer to `scipy.sparse.linalg.svds`.
+
+    For svd_solver == 'randomized', see:
+    :doi:`Halko, N., Martinsson, P. G., and Tropp, J. A. (2011).
+    "Finding structure with randomness: Probabilistic algorithms for
+    constructing approximate matrix decompositions".
+    SIAM review, 53(2), 217-288.
+    <10.1137/090771806>`
+    and also
+    :doi:`Martinsson, P. G., Rokhlin, V., and Tygert, M. (2011).
+    "A randomized algorithm for the decomposition of matrices".
+    Applied and Computational Harmonic Analysis, 30(1), 47-68.
+    <10.1016/j.acha.2010.02.003>`
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from sklearn.decomposition import PCA
+    >>> X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
+    >>> pca = PCA(n_components=2)
+    >>> pca.fit(X)
+    PCA(n_components=2)
+    >>> print(pca.explained_variance_ratio_)
+    [0.9924... 0.0075...]
+    >>> print(pca.singular_values_)
+    [6.30061... 0.54980...]
+
+    >>> pca = PCA(n_components=2, svd_solver='full')
+    >>> pca.fit(X)
+    PCA(n_components=2, svd_solver='full')
+    >>> print(pca.explained_variance_ratio_)
+    [0.9924... 0.00755...]
+    >>> print(pca.singular_values_)
+    [6.30061... 0.54980...]
+
+    >>> pca = PCA(n_components=1, svd_solver='arpack')
+    >>> pca.fit(X)
+    PCA(n_components=1, svd_solver='arpack')
+    >>> print(pca.explained_variance_ratio_)
+    [0.99244...]
+    >>> print(pca.singular_values_)
+    [6.30061...]
+    
     """
 
-    def __init__(self, n_factors = None, rotation = None, eval_crit = lambda x: True, loading_crit = lambda x: True):
-        super().__init__()
-        self.eigenvalues = None
-        self.loadings = None
-        self.score = None
-        self.rotation_mtx = None
-        self.n_factors = n_factors
+    def __init__(self, n_components = None, rotation = None, min_eigval = 0, min_abs_loading = 0):
+        super().__init__(n_components)        
         self.rotation = rotation
         self.max_iter = 500
         self.tol = 1e-6
-        self.var_exp = None
-        self.eval_crit = eval_crit
-        self.loading_crit = loading_crit
-        self.magnitudes = None
+        self.min_eigval = min_eigval
+        self.min_abs_loading = min_abs_loading
+        self._use_scaled_ = False
 
-    
-    def _fit(self, X, y = None):
+    def _fit_rot(self, n_components, U, S, Vt):
         """
-        y ignored.
-        Will perform factor analysis using principal component method,
-        with or without varimax rotation.
-
-        The code for this function was adapted directly from factor_analyzer package
+        extension to _fit_full and _fit_truncated to ensure components_ and other
+        attributes of modes fit to min criteria and to use loadings as components
         """
-        # perform principal component analysis on the data
-        # simplified version of factor_analysis from factor_analyzer package
-        # https://github.com/EducationalTestingService/factor_analyzer
-
-        # and to get them after rotation, use commonalities (https://online.stat.psu.edu/stat505/lesson/12/12.11o
-
-        # getting n_factors
-        if self.n_factors is None:
-            # make all principal components
-            n_factors = X.shape[1]
+        loadings = self.components_ * np.sqrt(S)[:n_components]
+        
+        if self.rotation == "varimax":
+            components_, _ =  varimax(loadings, self._use_scaled_, self.max_iter, self.tol)
+            S = np.sum(components_**2, axis = 0)
+        elif self.rotation is None:
+            components_, _ = loadings, None
         else:
-            n_factors = self.n_factors
-        
-        # normalizing data cov matrix
-        if self._use_scaled_:
-            Cx = np.corrcoef(X.T)
-        else:
-            Cx = np.cov(X.T)
+            raise(ValueError(f"Rotation supported for None and 'varimax', got {self.rotation}"))
 
-        # total variance
-        tot_var = sum(np.diag(Cx))
-        
-        # getting eigenvalues and eigenvectors using hermitian eigendecomposition
-        eigenvalues, eigenvectors = np.linalg.eigh(Cx)
-        eigenvalues, eigenvectors = eigenvalues[::-1][0:n_factors], eigenvectors[:,::-1][:,0:n_factors]
+        # using filter criteria
+        test_loads = np.any(components_ > self.min_abs_loading, axis = 0)
+        test_eigvals = S > self.min_eigval
 
-        # getting variance explained by each factor
-        var_exp = eigenvalues / tot_var
-        loadings = eigenvectors * np.sqrt(eigenvalues)
-        n_rows, n_cols = loadings.shape
-        
-        # initialize the rotation matrix. Will remain N x N identity matrix if
-        # varimax rotation not called-- otherwise, will be iteratively
-        # updated in the below code.
-        rotation_mtx = np.eye(n_cols)
+        # filtering which indices to keep based on minimum values
+        keep_inds = test_loads * test_eigvals
 
-        # if varimax rotation is requested, create rotation matrix.
-        if self.rotation == "varimax" and n_cols >= 2:
-            
-            L = loadings.copy()
+        self.n_components_ = np.sum(keep_inds)
+        self.components_ = components_.T[keep_inds].T
+        self.explained_variance_ = self.explained_variance_[keep_inds]
+        self.explained_variance_ratio_ = self.explained_variance_ratio_[keep_inds]
+        self.singular_values_ = self.singular_values_[keep_inds]
 
-            # normalize the loadings matrix
-            # using sqrt of the sum of squares (Kaiser)
-            if self._use_scaled_:
-                normalized_mtx = np.apply_along_axis(
-                    lambda x: np.sqrt(np.sum(x**2)), 1, L.copy()
-                )
-                L = (L.T / normalized_mtx).T
+        return U, S, Vt
 
-            # index and rotation matrix
-            d = 0
-            for _ in range(self.max_iter):
+    def _fit_full(self, X, n_components):
+        U, S, Vt = super()._fit_full(X, n_components)
+        U, S, Vt = self._fit_rot(n_components, U, S, Vt)
 
-                old_d = d
+        return U, S, Vt
 
-                # take inner product of loading matrix
-                # and rotation matrix
-                basis = np.dot(L, rotation_mtx)
+    def _fit_truncated(self, X, n_components, svd_solver):
+        U, S, Vt = super()._fit_truncated(X, n_components, svd_solver)
+        U, S, Vt = self._fit_rot(n_components, U, S, Vt)
 
-                # transform data for singular value decomposition using updated formula :
-                # B <- t(x) %*% (z^3 - z %*% diag(drop(rep(1, p) %*% z^2))/p)
-                diagonal = np.diag(np.squeeze(np.repeat(1, n_rows).dot(basis**2)))
-                transformed = L.T.dot(basis**3 - basis.dot(diagonal) / n_rows)
-
-                # perform SVD on
-                # the transformed matrix
-                U, S, V = np.linalg.svd(transformed)
-
-                # take inner product of U and V, and sum of S
-                rotation_mtx = np.dot(U, V)
-                d = np.sum(S)
-
-                # check convergence
-                if d < old_d * (1 + self.tol):
-                    break
-
-            # take inner product of loading matrix
-            # and rotation matrix
-            L = np.dot(L, rotation_mtx)
-
-            # de-normalize the data
-            if self._use_scaled_:
-                L = L.T * normalized_mtx
-            else:
-                L = L.T
-
-            # convert loadings matrix to data frame
-            loadings = L.T.copy()
-
-            # resetting eigenvalues after rotation
-            eigenvalues = np.apply_along_axis(lambda x: np.sum(x**2), 0, loadings)
-            
-        # filter
-        inds = self.eval_crit(eigenvalues) * np.apply_along_axis(self.loading_crit, 0, loadings)
-
-        # assigning attribute values
-        self.loadings = loadings.T[inds].T
-        self.rotation_mtx = rotation_mtx
-        self.eigenvalues = eigenvalues[inds]      
-        self._is_fitted_ = True
-        self.var_exp = eigenvalues / tot_var
-        self.tot_var = tot_var
-
-        return self
-
-
-    def _transform(self, X, y = None):
-        """
-        Ignores y input.
-        """
-
-        # check to see if model has been fit
-        self._check_is_fitted()
-
-        # check dimension match between jacobian and X
-        if self.loadings.shape[0] != X.shape[1]:
-            raise(ValueError(f"Data matrix of different dimension ({X.shape[1]}) than loadings ({self.loadings.shape[0]}). Use a different data matrix."))
-
-        # using demeaned X
-        X_dem = self._rm_mean(X)
-        
-        # get projections
-        self.magnitudes = X_dem @ self.loadings
-
-        return self
-
-    
-    def fit_transform(self, X, y = None):
-        """
-        Ignores y input.
-        """
-        self._fit(X)._transform(X)
-
-        return self
+        return U, S, Vt     
