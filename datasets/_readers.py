@@ -1,15 +1,16 @@
 import numpy as np
 
-from .containers._force_series import Force
-from .containers._rates_series import Rates
-from .containers._spike_train import Spikes
+import os
+
+from ..containers._force_series import Force
+from ..containers._rates_series import Rates
+from ..containers._spike_train import Spikes
 
 
 def force_read(file, delim = "\t"):
     """
     Reads in data as a force file
     """
-    
     stream = open(file)
     data = []
     for i, line in enumerate(stream):

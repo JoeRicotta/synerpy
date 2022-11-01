@@ -8,6 +8,8 @@ from ._base import _BaseUCM
 class _PLSRegression(PLSRegression, _BaseUCM):
 
     def fit(self, X, Y):
+
+        self.n_components = X.shape[1]
         
         super().fit(X,Y)
 
@@ -17,7 +19,7 @@ class _PLSRegression(PLSRegression, _BaseUCM):
             self.jacobian_ = self.coef_.T
         else:
             self.jacobian_ = self.coef_
-            
+
         self.scores_ = self.x_scores_
 
         # fiting ucm

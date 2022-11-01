@@ -67,7 +67,7 @@ class _BaseUCM:
         cov_x = np.cov((self.scores_ @ onb).T)
         vort = np.diag(cov_x)[:dim_ort].sum()
         vucm = np.diag(cov_x).sum() - vort
-        dv = vucm - vort / (vucm + vort)
+        dv = (vucm - vort) / (vucm + vort)
 
         # storing all values
         self.ucm_ = ucm
