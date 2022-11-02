@@ -1,4 +1,4 @@
-# `synerpy`:
+# `synerpy`
 An open-source toolkit for the analysis of synergies in motor control and motor neuroscience.
 
 Broadly speaking, the word synergy is used to define the existence of significant covariation between elements of the motor ensemble, although the exact definition varies between authors. `synerpy` offers a small but useful suite of extendable classes in the [sklearn](https://scikit-learn.org/stable/getting_started.html) 'call-fit-transform' style, permitting for the analysis of synergies. The current version hosts a suite of tools for the Uncontrolled Manifold Analysis (Scholz * Schoner 1999).
