@@ -1,7 +1,7 @@
-# `synerpy`:
+# `synerpy`
 An open-source toolkit for the analysis of synergies in motor control and motor neuroscience.
 
-Broadly speaking, the word synergy is used to define the existence of significant covariation between elements of the motor ensemble, although the exact definition varies between authors. `synerpy` offers a small but useful suite of extendable classes in the [sklearn](https://scikit-learn.org/stable/getting_started.html) 'call-fit-transform' style, permitting for the analysis of synergies. The current version hosts a suite of tools for the Uncontrolled Manifold Analysis (Scholz * Schoner 1999).
+Broadly speaking, the word synergy is used to define the existence of significant covariation between elements of the motor ensemble, although the exact definition varies between authors. `synerpy` offers a small but useful suite of extendable classes in the [sklearn](https://scikit-learn.org/stable/getting_started.html) 'call-fit-transform' style, permitting for the analysis of synergies. The current version hosts a suite of tools for the Uncontrolled Manifold Analysis (Scholz and Schoner 1999).
 
 Synerpy uses scikit-learn's api to gently extend the powerful sklearn architecture with a motor neuroscience bent. You will need sklearn v1.1.3 or greater to use synerpy.
 
@@ -13,7 +13,7 @@ The uncontrolled manifold analysis ([Scholz and Schoner 1999](https://www.resear
 2. empirical models (`PCRegression()`, `PLSRegression()`, `LeastSquaresRegression()`) used when the jacobian matrix is unknown and must be estimated from data.
 
 ### Analytic model
-If the jacobian matrix was known before data was collected, the UCM analysis proceeds very simply. For the moment, we will simulate a small random dataset (since it does not make sense to perform this analysis on the loaded force/motor unit data).
+If the jacobian matrix was known before data was collected, the UCM analysis proceeds very simply. For the moment, we will simulate a small random dataset.
 
 ```python
 import numpy as np
