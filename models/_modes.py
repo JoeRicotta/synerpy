@@ -268,8 +268,8 @@ class Modes(PCA):
         extension to _fit_full and _fit_truncated to ensure components_ and other
         attributes of modes fit to min criteria and to use loadings as components
         """
-        loadings = self.components_ * np.sqrt(S)[:n_components]
-        
+        loadings = self.components_.T * np.sqrt(S)[:n_components]
+    
         if self.rotation == "varimax":
             components_, _ =  varimax(loadings, self._use_scaled_, self.max_iter, self.tol)
             S = np.sum(components_**2, axis = 0)
@@ -279,7 +279,7 @@ class Modes(PCA):
             raise(ValueError(f"Rotation supported for None and 'varimax', got {self.rotation}"))
 
         # using filter criteria
-        test_loads = np.any(components_ > self.min_abs_loading, axis = 0)
+        test_loads = np.any(np.abs(components_) > self.min_abs_loading, axis = 0)
         test_eigvals = S > self.min_eigval
 
         # filtering which indices to keep based on minimum values

@@ -1,6 +1,7 @@
 from ._base import BaseTimeSeries
 import numpy as np
 from scipy import signal
+import matplotlib.pyplot as plt
 
 class Force(BaseTimeSeries):
     """
@@ -114,7 +115,7 @@ class Force(BaseTimeSeries):
 
     # FIXME
     # needs to make sense for data with more than one element.
-    def partition(self, hz, method = "midline", target = .3, prominence = .055, distance_s = .25):        
+    def partition(self, hz, method = "midline", target = .3, prominence = .055, distance_s = .25, _check_partition = False):        
         """
         Partition force time series based on force magnitudes.
 
@@ -149,6 +150,11 @@ class Force(BaseTimeSeries):
 
         # find indices of peaks in rectified data
         inds = signal.find_peaks(np.abs(centered), prominence = prominence, distance = distance)[0]
+        if _check_partition:
+            plt.figure(figsize=(12,5))
+            plt.plot([i for i in range(data.shape[0])], data)
+            [plt.axvline(i) for i in inds]
+            plt.show()
 
         # sorting indices between positive and negative data
         for i in inds:
