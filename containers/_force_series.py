@@ -1,4 +1,6 @@
 from ._base import BaseTimeSeries
+import numpy as np
+from scipy import signal
 
 class Force(BaseTimeSeries):
     """
