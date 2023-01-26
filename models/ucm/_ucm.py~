@@ -1,0 +1,7 @@
+from sklearn.base import BaseEstimator
+
+from ._base import _BaseUCM
+
+class UCM(_BaseUCM, BaseEstimator):
+
+    def __init__(self, scores, jacobian):

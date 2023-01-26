@@ -1,0 +1,40 @@
+from sklearn.cross_decomposition import PLSRegression
+
+from ._base import _BaseUCM
+
+# API to sklearn regression and sklearn PCA.
+# Should be safe wrt version updates.
+
+class _PLSRegression(LinearRegression, _PCAMixin, _BaseUCM):
+
+    def __init__(self, n_components = None):
+        # adding PC parameters manually
+        self.__dict__.update(
+            _PCAMixin().get_params()
+        )
+        self.n_components = n_components                
+        super().__init__()
+        
+    def fit(self, X, y):
+        
+        # fitting PCs
+        U = self._fit_transform_pca(X)
+        self.scores_ = U
+
+        # fitting regression
+        super().fit(U, y)
+        # storing jacobian as 2d
+        self.jacobian_ = np.array([self.coef_])
+
+        # fiting ucm
+        self._ucm_fit()
+
+        return self
+
+
+X = np.random.rand(6,2)
+y = np.random.rand(6)
+M = _PCRegression().fit(X,y)
+M.dv_
+
+
