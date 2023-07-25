@@ -269,12 +269,13 @@ class Modes(PCA):
         attributes of modes fit to min criteria and to use loadings as components
         """
         loadings = self.components_.T * np.sqrt(S)[:n_components]
-    
+        
         if self.rotation == "varimax":
             components_, _ =  varimax(loadings, self._use_scaled_, self.max_iter, self.tol)
             S = np.sum(components_**2, axis = 0)
         elif self.rotation is None:
             components_, _ = loadings, None
+            S = S[0:components_.shape[1]]
         else:
             raise(ValueError(f"Rotation supported for None and 'varimax', got {self.rotation}"))
 

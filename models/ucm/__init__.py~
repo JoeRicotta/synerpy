@@ -1,7 +1,0 @@
-"""
-import all ucm models
-"""
-
-from ._analytical_ucm import AnalyticalUCM
-from ._empirical_ucm import EmpiricalUCM
-from ._bayesian_ucm import BayesianUCM

@@ -47,7 +47,6 @@ class _BaseUCM:
         Takes a jacobian and defines an orthonormal basis of ORT and UCM.
         Returns the orthonormal basis as well as the dimensions of ORT and UCM.
         """
-        
         # making sure j is normalized
         norm = np.diag((1 / linalg.norm(self.jacobian_, axis = 1)))
         normalized_jacobian = norm @ self.jacobian_

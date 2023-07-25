@@ -10,7 +10,13 @@ class _LeastSquaresRegression(LinearRegression, _BaseUCM):
 
         #fitting regression
         super().fit(X, y)
-        self.jacobian_ = np.array([self.coef_])
+        if len(self.coef_.shape) == 2:
+            rows, cols = self.coef_.shape
+            if rows > cols:
+                self.jacobian_ = self.coef_.reshape(cols, rows)
+            else:
+                self.jacobian_ = self.coef_
+            
         self.scores_ = X
 
         # fitting ucm

@@ -1,3 +1,0 @@
-from ._datasets import load_forces
-from ._datasets import load_firings
-from ._datasets import load_rates

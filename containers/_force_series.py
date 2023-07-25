@@ -1,7 +1,7 @@
 from ._base import BaseTimeSeries
-import numpy as np
+
 from scipy import signal
-import matplotlib.pyplot as plt
+import numpy as np
 
 class Force(BaseTimeSeries):
     """
@@ -18,6 +18,7 @@ class Force(BaseTimeSeries):
         self.mvc_file = mvc_file
         self.time_range = (min(time) / 1000, max(time) / 1000)
         self.units = units
+        self.tot_force = data.sum(1)
         
     @property
     def T(self):
@@ -115,7 +116,7 @@ class Force(BaseTimeSeries):
 
     # FIXME
     # needs to make sense for data with more than one element.
-    def partition(self, hz, method = "midline", target = .3, prominence = .055, distance_s = .25, _check_partition = False):        
+    def partition(self, hz, method = "midline", target = .3, prominence = .055, distance_s = .25):        
         """
         Partition force time series based on force magnitudes.
 
@@ -137,8 +138,7 @@ class Force(BaseTimeSeries):
             stuff.
         """
         # firstly, is the data unidimensional?
-        assert self.data.shape[1] == 1, "Data must be a column matrix to use partition()"
-        data = self.data.T[0]
+        data = self.tot_force
 
         # calculating minimum number of indices between peaks
         distance = hz * distance_s
@@ -150,11 +150,6 @@ class Force(BaseTimeSeries):
 
         # find indices of peaks in rectified data
         inds = signal.find_peaks(np.abs(centered), prominence = prominence, distance = distance)[0]
-        if _check_partition:
-            plt.figure(figsize=(12,5))
-            plt.plot([i for i in range(data.shape[0])], data)
-            [plt.axvline(i) for i in inds]
-            plt.show()
 
         # sorting indices between positive and negative data
         for i in inds:

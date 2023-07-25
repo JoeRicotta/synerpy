@@ -1,5 +1,0 @@
-"""
-The module synerpy.models includes, well, models.
-"""
-
-from . import ucm

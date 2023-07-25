@@ -51,7 +51,7 @@ class BaseTimeSeries(object):
             if has_time:
                 # if time column is found, separate from the data
                 time = data.T[0]
-                data = data.T[1:][0]
+                data = data.T[1:].T#[0].T
 
         else:
             # if only one column, clearly need a time index

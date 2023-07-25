@@ -1,3 +1,0 @@
-from synerpy.models import ucm
-
-forces.plot()
